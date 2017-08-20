@@ -1,0 +1,51 @@
+#app {
+  font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
+  max-width: 600px;
+  margin: 0 auto;
+  padding-top: 72px;
+  -webkit-font-smoothing: antialiased;
+  font-size: 1.125em;
+  color: #333;
+  line-height: 1.5em; }
+
+h1, h2, h3 {
+  color: #000; }
+
+h1 {
+  font-size: 2.5em; }
+
+h2 {
+  font-size: 2em; }
+
+h3 {
+  font-size: 1.5em; }
+
+a {
+  text-decoration: none;
+  color: #09f; }
+
+a:hover {
+  text-decoration: underline; }
+
+input[type=button] {
+  -webkit-appearance: none;
+  font-weight: bold;
+  font-size: 14px;
+  color: white;
+  background: #000;
+  border: none;
+  line-height: 32px;
+  padding-left: 12px;
+  padding-right: 12px;
+  cursor: pointer; }
+
+div.timer {
+  font-size: 60px;
+  line-height: 90px;
+  font-weight: bold; }
+
+table, th, td {
+  border-collapse: collapse;
+  border: 1px solid #aaa; }
+  table td, th td, td td {
+    padding: 8px; }
