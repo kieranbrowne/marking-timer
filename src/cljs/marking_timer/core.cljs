@@ -1,6 +1,9 @@
 (ns marking-timer.core
     (:require [reagent.core :as reagent :refer [atom cursor]]
               [alandipert.storage-atom :refer  [local-storage]]
+              [cljsjs.svgjs]
+              [goog.string :refer [format]]
+              [goog.string.format]
               ))
 
 (defn now [] (.getTime (js/Date.)))
@@ -21,9 +24,8 @@
              {:now (now)
               :finish (next-occuring-time "17:00")
               :total 50
-              :times []
-              }
-             )))
+              :times []})
+                          :timer))
 
 (def times (cursor state [:times]))
 (def finish (cursor state [:finish]))
@@ -50,12 +52,20 @@
   (- @total (count (differences))))
 
 (defn time-remaining []
-  (- @finish @(cursor state [:now]))
+  (- @finish (:now @state))
   )
 
 (defn time-remaining-per-exam []
-  (/ (time-remaining) (remaining-exams))
+  (if (= 0 (remaining-exams))
+    0.01
+    (max
+      (/ (time-remaining) (remaining-exams))
+      0.01)
+    )
   )
+
+(defn current-task-time []
+  (- @(cursor state [:now]) (last @times)))
 
 (defn time-str [timeint]
   (re-find #"\d+:\d+" (.toTimeString (js/Date. timeint))))
@@ -81,35 +91,127 @@
         mins (Math/floor (/ (- t (* hours 1000 60 60)) 1000 60))
         secs (Math/floor (/ (- t (* mins 1000 60)) 1000))]
     (str (if (not (= 0 hours)) (str hours "h "))
-         mins "m"
+         (if (not (= 0 mins)) (str mins "m"))
          (if (= 0 hours) (str secs "s")))))
 
 ;; -------------------------
 ;; Views
 
+(defn polarToCartesian [cx cy r degrees]
+  (let [radians (/ (* (.-PI js/Math) (- degrees 90)) 180)]
+    {:x (+ cx (* r (.cos js/Math radians)))
+     :y (+ cy (* r (.sin js/Math radians)))}))
+
+(defn arc [x y r s e]
+  (let [start (polarToCartesian x y r e)
+        end (polarToCartesian x y r s)
+        largeArcFlag (if (>= 180 (- e s)) 0 1)
+        ]
+    (if (< e 360)
+      [:path {:d 
+              (format
+                "M%.2f,%.2f A%d,%d 0 %d,0 %.2f,%.2f"
+                (:x start) (:y start) r r largeArcFlag (:x end) (:y end)) }]
+      [:circle {:cx x :cy y :r r}]
+      )))
+
+
+(defn dial []
+  [:svg {:viewBox "0 0 400 400" :version "1.1"
+         :style {:cursor :pointer
+                 :position "absolute"
+                 :width (if (> (.-innerHeight js/window) (.-innerWidth js/window)) "80vw" "80vh")
+                 :left "50%" :top "50%" :transform "translate(-50%, -50%)"}
+         :on-click #(swap! times conj (now))}
+   ; outlines
+   [:g {:stroke "#318" :stroke-width "9" :fill "none"}
+    [arc 200 200 140 0 360]
+    [arc 200 200 150 0 360] ]
+   ; 
+   [:g {:stroke 
+        (if (or (empty? @times) 
+                (> 0.75 (/ (current-task-time) (time-remaining-per-exam)))) 
+          "#cf0" 
+          (if (> 500 (mod (:now @state) 1000)) "#f00" "#000")
+          ) 
+        :stroke-width "9" :fill "none"}
+    [arc 200 200 150 0 (* (/ (current-task-time) (time-remaining-per-exam)) 360)]
+    ]
+   [:g {:alignment-baseline "middle" :text-anchor "middle" :font-size 14 :font-weight 500 :stroke "none" :fill "#cf0"}
+     [:text {:x 200 :y 110} (nice (time-remaining-per-exam))]
+     [:text {:x 200 :y 125} (str "per task")]
+    ]
+   [:g {:stroke "#3cf" :stroke-width "9" :fill "none"}
+    [arc 200 200 140 0 (* (/ (- @finish (first @times) (time-remaining)) (- @finish (first @times))) 360)]
+    ]
+   [:g {:alignment-baseline "middle" :text-anchor "middle" :font-size 14 :font-weight 500 :stroke "none" :fill "#3cf"}
+     [:text {:x 200 :y 284} (nice (time-remaining))]
+     [:text {:x 200 :y 300} (str "remaining")]
+    ]
+   [:text {:x 200 :y 200 :alignment-baseline "middle" :text-anchor "middle" :font-size 36 :font-weight 900 :fill "#fff"}  
+    (if (empty? @times) "Start Now"
+      (nice (- (:now @state) (last @times))))]
+   ]
+  )
+
+(def input-styles
+  {:font-size "34px" :width "73px"
+   :background "none"
+   :color "white"
+   :outline "none"
+   :border "none"
+   :border-bottom "3px solid white"}
+  )
 
 (defn app []
-  [:div [:h2 "Marking Timer"]
+  [:div 
+   {:style {:color "white"}}
+   [:h2 {:style {:font-style "italic" 
+                 :font-weight "200"
+                 :color "white"
+                 :position "absolute"
+                 :top 0
+                 :left "30px"
+                 }} 
+    "time" [:span {:style {:font-weight 900}} "spl.it"]]
+   [:h2 {:style {:font-style "italic" 
+                 :font-weight "900"
+                 :color "white"
+                 :position "absolute"
+                 :bottom 0
+                 :font-size "28px"
+                 :right "30px"
+                 }} 
+               (if (< (count @times) 2)
+                 "∞"
+                 (nice  (/ (apply + (intervals)) (count (intervals)))))
+    [:span {:style {:font-weight 200}} " avg."]]
+   [:h2 {:style {:font-style "italic" 
+                 :font-weight "900"
+                 :color "white"
+                 :position "absolute"
+                 :bottom 0
+                 :font-size "28px"
+                 :left "30px"
+                 }} 
+    (remaining-exams) [:span {:style {:font-weight 200}} " to go"]]
+
+   [dial]
+
    [:div
-    [:label "Students to mark:"] [:br]
+    {:style {:position "absolute"
+             :top "30%"
+             :font-size "34px"}}
+    [:label "I need to finish "]
     [:input {:type "number" :value @total
              :on-change #(reset! total (.-target.value %))
-             }] [:br]
-    [:label "Current time: " (time-str @(cursor state [:now]))] [:br]
-    [:label "I need to finish by: " (time-str @finish)] [:br]
+             :style input-styles
+             }] 
+    [:label " tasks by " ]
     [:input {:type "time" :value (time-str @finish)
              :on-change #(reset! finish (next-occuring-time (.-target.value %)))
+             :style (assoc input-styles :width "140px")
              }] [:br]
-    [:label "I need to finish in "
-            (nice (time-remaining)) "  "
-     ;; (nice (text-to-time (nice (time-remaining))))
-     ] [:br]
-    ;; [:input {:type "text" :value (nice (time-remaining))
-    ;;          :on-change #(reset! finish (text-to-time (.-target.value %)))
-    ;;          }] [:br]
-    [:input  {:type  "button" :value  "Start new timer"
-              :on-click #(swap! (cursor state [:times])
-                                (fn [x] (conj x (now))))}] [:br]
     [(fn []
       (js/setTimeout
         #(do (reset! (cursor state [:now]) (now))
@@ -119,38 +221,31 @@
                    (> (- @(cursor state [:now]) (last @times))
                     (* (time-remaining-per-exam) 0.75))
                    (not (empty? @times))
+                   (> (mod @(cursor state [:now]) 1000) 900)
                    )
                (.play beep))
-             ) 1000)
-      (if (not (empty? @times))
-          [:div.timer
-               (nice (- @(cursor state [:now]) (last @times)))]
-          [:p (str "READY TO GO?")])
+             ) 100)
+      [:p 
+       {:style {:font-size 0 :opacity 0}}
+       (nice (time-remaining))]
       )]
-    [:table [:tbody
-             [:tr
-              [:td "remaining "]
-              [:td "average "]
-              [:td "time left "]
-              [:td "time per exam "]
-              ]
-             [:tr
-              [:td (remaining-exams)]
-              [:td (nice  (/ (apply + (intervals)) (count (intervals))))]
-              [:td (nice (time-remaining))]
-              [:td (nice (time-remaining-per-exam) )]
-              ]]]
+    ]
     (into [:div
+           {:style {:position "absolute"
+                    :right 30 
+                    :top 1}}
            [:h4 "History"]
+           [:div
+            {:style {:background "linear-gradient(to top, rgba(68,0,238,1), rgba(68,0,238,0) 100%);"}}]
            [:input  {:type  "button" :value  "Clear history"
-              :on-click #(reset! (cursor state [:times]) [])}]
+              :on-click #(reset! times [])}]
            ] (map-indexed (fn [i x] [:p (nice x)
                            [:a {:on-click
                                 #(swap! (cursor state [:times])
-                                  (fn [times] (drop-nth (- (count times) i 2) times)))
-                                } " ×"]])
+                                  (fn [times] (vec (drop-nth (- (count times) i 2) times))))
+                                } "× "]])
                       (intervals)))
-    ]])
+    ])
 
 
 (defn reload  []
