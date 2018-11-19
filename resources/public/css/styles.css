@@ -10,6 +10,26 @@ body {
   color: #333;
   line-height: 1.5em; }
 
+svg text, svg g {
+  transition: all 1s ease;
+  transform-origin: center; }
+
+#history span {
+  transition: all .8s ease;
+  transform: translate(-12px, 0);
+  display: inline-block; }
+#history span a {
+  opacity: 0;
+  width: 0;
+  transition: all .8s ease; }
+#history:hover span a {
+  opacity: 1;
+  width: auto; }
+  #history:hover span a:hover {
+    color: red; }
+#history:hover span {
+  transform: translate(0, 0); }
+
 h1, h2, h3 {
   color: #000; }
 
@@ -24,10 +44,7 @@ h3 {
 
 a {
   text-decoration: none;
-  color: #09f; }
-
-a:hover {
-  text-decoration: underline; }
+  cursor: pointer; }
 
 input[type=button] {
   -webkit-appearance: none;

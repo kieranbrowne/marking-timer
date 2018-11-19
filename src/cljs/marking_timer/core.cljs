@@ -24,6 +24,7 @@
              {:now (now)
               :finish (next-occuring-time "17:00")
               :total 50
+              :edit true
               :times []})
                           :timer))
 
@@ -120,13 +121,17 @@
   [:svg {:viewBox "0 0 400 400" :version "1.1"
          :style {:cursor :pointer
                  :position "absolute"
-                 :width (if (> (.-innerHeight js/window) (.-innerWidth js/window)) "80vw" "80vh")
+                 :width (if (> (.-innerHeight js/window) (.-innerWidth js/window)) "80vw" "60vh")
                  :left "50%" :top "50%" :transform "translate(-50%, -50%)"}
-         :on-click #(swap! times conj (now))}
+         :on-click (if (:edit @state) nil #(swap! times conj (now)))}
    ; outlines
-   [:g {:stroke "#318" :stroke-width "9" :fill "none"}
-    [arc 200 200 140 0 360]
-    [arc 200 200 150 0 360] ]
+   [:g {:stroke "#318" :stroke-width "13" :fill "none"
+        :style 
+        (if (:edit @state)
+          {:transform "scale(0.9)" :opacity 0}
+          {:transform "scale(1)" :opacity 1}) }
+    [arc 200 200 175 0 360]
+    [arc 200 200 190 0 360] ]
    ; 
    [:g {:stroke 
         (if (or (empty? @times) 
@@ -134,21 +139,43 @@
           "#cf0" 
           (if (> 500 (mod (:now @state) 1000)) "#f00" "#000")
           ) 
-        :stroke-width "9" :fill "none"}
-    [arc 200 200 150 0 (* (/ (current-task-time) (time-remaining-per-exam)) 360)]
+        :stroke-width "13" :fill "none"
+        :style 
+        (if (:edit @state)
+          {:transform "scale(0.8)" :opacity 0}
+          {:transform "scale(1)" :opacity 1}) }
+    [arc 200 200 190 0 (* (/ (current-task-time) (time-remaining-per-exam)) 360)]
     ]
-   [:g {:alignment-baseline "middle" :text-anchor "middle" :font-size 14 :font-weight 500 :stroke "none" :fill "#cf0"}
+   [:g {:alignment-baseline "middle" :text-anchor "middle" :font-size 14 :font-weight 500 :stroke "none" :fill "#cf0"
+        :style 
+        (if (:edit @state)
+          {:transform "scale(0.45)" :opacity 0}
+          {:transform "scale(1)" :opacity 1}) }
      [:text {:x 200 :y 110} (nice (time-remaining-per-exam))]
      [:text {:x 200 :y 125} (str "per task")]
     ]
-   [:g {:stroke "#3cf" :stroke-width "9" :fill "none"}
-    [arc 200 200 140 0 (* (/ (- @finish (first @times) (time-remaining)) (- @finish (first @times))) 360)]
+   [:g {:stroke "#3cf" :stroke-width "13" :fill "none"
+        :style 
+        (if (:edit @state)
+          {:transform "scale(0.75)" :opacity 0}
+          {:transform "scale(1)" :opacity 1}) 
+        }
+    [arc 200 200 175 0 (* (/ (- @finish (first @times) (time-remaining)) (- @finish (first @times))) 360)]
     ]
-   [:g {:alignment-baseline "middle" :text-anchor "middle" :font-size 14 :font-weight 500 :stroke "none" :fill "#3cf"}
+   [:g {:alignment-baseline "middle" :text-anchor "middle" :font-size 14 :font-weight 500 :stroke "none" :fill "#3cf"
+        :style 
+        (if (:edit @state)
+          {:transform "scale(0.45)" :opacity 0}
+          {:transform "scale(1)" :opacity 1}) }
      [:text {:x 200 :y 284} (nice (time-remaining))]
      [:text {:x 200 :y 300} (str "remaining")]
     ]
-   [:text {:x 200 :y 200 :alignment-baseline "middle" :text-anchor "middle" :font-size 36 :font-weight 900 :fill "#fff"}  
+   [:text {:x 200 :y 210 :alignment-baseline "middle" :text-anchor "middle" :font-size 50 :font-weight 900 :fill "#fff"
+        :style 
+        (if (:edit @state)
+          {:transform "scale(0.65) translate(0,-0px)" :opacity 0}
+          {:transform "scale(1)" :opacity 1}) 
+        }
     (if (empty? @times) "Start Now"
       (nice (- (:now @state) (last @times))))]
    ]
@@ -166,7 +193,8 @@
 (defn app []
   [:div 
    {:style {:color "white"}}
-   [:h2 {:style {:font-style "italic" 
+   [:h1 {:on-click #(swap! state update :edit not)
+         :style {:font-style "italic" 
                  :font-weight "200"
                  :color "white"
                  :position "absolute"
@@ -174,8 +202,7 @@
                  :left "30px"
                  }} 
     "time" [:span {:style {:font-weight 900}} "spl.it"]]
-   [:h2 {:style {:font-style "italic" 
-                 :font-weight "900"
+   [:h2 {:style {:font-weight "900"
                  :color "white"
                  :position "absolute"
                  :bottom 0
@@ -186,8 +213,7 @@
                  "∞"
                  (nice  (/ (apply + (intervals)) (count (intervals)))))
     [:span {:style {:font-weight 200}} " avg."]]
-   [:h2 {:style {:font-style "italic" 
-                 :font-weight "900"
+   [:h2 {:style {:font-weight "900"
                  :color "white"
                  :position "absolute"
                  :bottom 0
@@ -198,10 +224,17 @@
 
    [dial]
 
-   [:div
+   [:div#task-description
     {:style {:position "absolute"
-             :top "30%"
-             :font-size "34px"}}
+             :top "50%"
+             :font-size "34px"
+             :left "50%"
+             :transition "all .6s ease"
+             :width 350
+             :pointer-events (if (:edit @state) "auto" "none")
+             :opacity (if (:edit @state) 1 0)
+             :transform (if (:edit @state) "translate(-50%,-50%)" "translate(-50%,-90%)")
+             }}
     [:label "I need to finish "]
     [:input {:type "number" :value @total
              :on-change #(reset! total (.-target.value %))
@@ -230,20 +263,21 @@
        (nice (time-remaining))]
       )]
     ]
-    (into [:div
+    (into [:div#history
            {:style {:position "absolute"
                     :right 30 
                     :top 1}}
            [:h4 "History"]
            [:div
-            {:style {:background "linear-gradient(to top, rgba(68,0,238,1), rgba(68,0,238,0) 100%);"}}]
-           [:input  {:type  "button" :value  "Clear history"
-              :on-click #(reset! times [])}]
-           ] (map-indexed (fn [i x] [:p (nice x)
-                           [:a {:on-click
-                                #(swap! (cursor state [:times])
-                                  (fn [times] (vec (drop-nth (- (count times) i 2) times))))
-                                } "× "]])
+            {:style {:background "linear-gradient(to top, rgba(68,0,238,1), rgba(68,0,238,0) 100%)"}}]
+           [:a  {:on-click #(reset! times [])} "clear all"]
+           ] (map-indexed (fn [i x]
+                            [:span {:style {:display "block"}}
+                             [:a {:style {:font-size 28 :text-decoration :none :cursor "pointer"} 
+                                  :on-click
+                                  #(swap! (cursor state [:times])
+                                          (fn [times] (vec (drop-nth (- (count times) i 2) times))))
+                                  } "× "] [:span (nice x)]])
                       (intervals)))
     ])
 

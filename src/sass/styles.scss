@@ -13,6 +13,40 @@ body {
   line-height: 1.5em;
 }
 
+svg {
+  text, g {
+    transition: all 1s ease;
+    transform-origin: center;
+  }
+}
+
+#history {
+  span {
+    transition: all .8s ease;
+    transform: translate(-12px, 0);
+    display: inline-block;
+  }
+  span a {
+    opacity: 0;
+    width: 0;
+    transition: all .8s ease;
+  }
+
+  &:hover {
+    span a {
+      opacity: 1;
+      width: auto;
+
+      &:hover {
+        color: red;
+      }
+    }
+    span {
+      transform: translate(0, 0);
+    }
+  }
+}
+
 h1, h2, h3 {
   color: #000;
 }
@@ -30,12 +64,9 @@ h3 {
 
 a {
   text-decoration: none;
-  color: #09f;
+  cursor: pointer;
 }
 
-a:hover {
-  text-decoration: underline;
-}
 
 input[type=button] {
   -webkit-appearance: none;
