@@ -200,8 +200,9 @@
                  :position "absolute"
                  :top 0
                  :left "30px"
+                 :font-size "30px"
                  }} 
-    "time" [:span {:style {:font-weight 900}} "spl.it"]]
+    "time" [:span {:style {:font-weight 900}} "split"]]
    [:h2 {:style {:font-weight "900"
                  :color "white"
                  :position "absolute"
@@ -263,15 +264,20 @@
        (nice (time-remaining))]
       )]
     ]
-    (into [:div#history
+    [:div#history
            {:style {:position "absolute"
                     :right 30 
-                    :top 1}}
+                    :top 1
+                    }}
            [:h4 "History"]
            [:div
-            {:style {:background "linear-gradient(to top, rgba(68,0,238,1), rgba(68,0,238,0) 100%)"}}]
-           [:a  {:on-click #(reset! times [])} "clear all"]
-           ] (map-indexed (fn [i x]
+            {:style {:background "linear-gradient(to top, rgba(68,0,238,1), rgba(68,0,238,0) 30%)"
+                     :z-index 1
+                     :position "absolute"
+                     :pointer-events "none"
+                     :top 0 :bottom "20px" 
+                     :left "-12px" :right 0}}]
+           (into [:div {:style {:height "inherit" :overflow-y "scroll" :max-height "30vh"}}] (map-indexed (fn [i x]
                             [:span {:style {:display "block"}}
                              [:a {:style {:font-size 28 :text-decoration :none :cursor "pointer"} 
                                   :on-click
@@ -279,6 +285,8 @@
                                           (fn [times] (vec (drop-nth (- (count times) i 2) times))))
                                   } "× "] [:span (nice x)]])
                       (intervals)))
+           [:a  {:on-click #(reset! times [])} "clear all"]
+           ] 
     ])
 
 
