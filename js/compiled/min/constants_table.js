@@ -239,6 +239,7 @@ cljs.core.cst$sym$len = new cljs.core.Symbol(null,"len","len",-1230778691,null);
 cljs.core.cst$kw$componentWillMount = new cljs.core.Keyword(null,"componentWillMount","componentWillMount",-285327619);
 cljs.core.cst$sym$right = new cljs.core.Symbol(null,"right","right",1187949694,null);
 cljs.core.cst$sym$throw = new cljs.core.Symbol(null,"throw","throw",595905694,null);
+cljs.core.cst$kw$user_DASH_select = new cljs.core.Keyword(null,"user-select","user-select",-346451650);
 cljs.core.cst$kw$none = new cljs.core.Keyword(null,"none","none",1333468478);
 cljs.core.cst$sym$fseq = new cljs.core.Symbol(null,"fseq","fseq",-1466412450,null);
 cljs.core.cst$sym$nocache_QMARK_ = new cljs.core.Symbol(null,"nocache?","nocache?",-1065670978,null);
