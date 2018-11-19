@@ -3,7 +3,6 @@
                  [org.clojure/clojurescript "1.9.229"]
                  [reagent "0.6.0"]
                  [alandipert/storage-atom "1.2.4"]
-                 [cljsjs/svgjs  "2.2.5-0"]
                  ]
 
   :min-lein-version "2.5.3"

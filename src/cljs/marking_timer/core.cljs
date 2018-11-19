@@ -1,7 +1,6 @@
 (ns marking-timer.core
     (:require [reagent.core :as reagent :refer [atom cursor]]
               [alandipert.storage-atom :refer  [local-storage]]
-              [cljsjs.svgjs]
               [goog.string :refer [format]]
               [goog.string.format]
               ))
@@ -122,6 +121,7 @@
          :style {:cursor :pointer
                  :position "absolute"
                  :width (if (> (.-innerHeight js/window) (.-innerWidth js/window)) "80vw" "60vh")
+                 :user-select "none"
                  :left "50%" :top "50%" :transform "translate(-50%, -50%)"}
          :on-click (if (:edit @state) nil #(swap! times conj (now)))}
    ; outlines
@@ -198,6 +198,7 @@
                  :font-weight "200"
                  :color "white"
                  :position "absolute"
+                 :user-select "none"
                  :top 0
                  :left "30px"
                  :font-size "30px"
